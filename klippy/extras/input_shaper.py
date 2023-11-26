@@ -85,12 +85,15 @@ class InputShaper:
                     , shaper_freq_x, shaper_freq_y
                     , damping_ratio_x, damping_ratio_y)
     def disable_shaping(self):
-        if (self.saved_shaper_freq_x or self.saved_shaper_freq_y) and not (
-                self.shaper_freq_x or self.shaper_freq_y):
+        if (
+            (self.saved_shaper_freq_x or self.saved_shaper_freq_y)
+            and not self.shaper_freq_x
+            and not self.shaper_freq_y
+        ):
             # Input shaper is already disabled
             return
-        self.saved_shaper_freq_x = self.shaper_freq_x
         self.saved_shaper_freq_y = self.shaper_freq_y
+        self.saved_shaper_freq_x = self.shaper_freq_x
         self._set_input_shaper(self.shaper_type_x, self.shaper_type_y, 0., 0.,
                                self.damping_ratio_x, self.damping_ratio_y)
     def enable_shaping(self):
@@ -116,9 +119,7 @@ class InputShaper:
         def parse_shaper(shaper_type_str):
             shaper_type_str = shaper_type_str.lower()
             if shaper_type_str not in self.shapers:
-                raise gcmd.error(
-                    "Requested shaper type '%s' is not supported" % (
-                        shaper_type_str))
+                raise gcmd.error(f"Requested shaper type '{shaper_type_str}' is not supported")
             return self.shapers[shaper_type_str]
 
         shaper_type = gcmd.get('SHAPER_TYPE', None, parser=parse_shaper)

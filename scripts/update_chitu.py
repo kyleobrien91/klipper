@@ -46,7 +46,7 @@ def xor_block(r0, r1, block_number, block_size, file_key):
         xor_seed = (loop_counter * loop_counter) + block_number
 
         # shift the xor_seed left by the bits in IP.
-        xor_seed = xor_seed >> ip
+        xor_seed >>= ip
 
         # load a byte into IP
         ip = r0[loop_counter]
@@ -70,7 +70,7 @@ def encode_file(input, output_file, file_length):
     key_length = 0x18
 
     uid_value = uuid.uuid4()
-    file_key = int(uid_value.hex[0:8], 16)
+    file_key = int(uid_value.hex[:8], 16)
 
     xor_crc = 0xef3d4323;
 
@@ -87,7 +87,7 @@ def encode_file(input, output_file, file_length):
     output_file.write(struct.pack("<I", file_key))
 
     #TODO - how to enforce that the firmware aligns to block boundaries?
-    block_count = int(len(input_file) / block_size)
+    block_count = len(input_file) // block_size
     print("Block Count is ", block_count)
     for block_number in range(0, block_count):
         block_offset = (block_number * block_size)
@@ -119,13 +119,12 @@ def main():
         print("Firmware file", fw, "does not exist")
         exit(1)
 
-    firmware = open(fw, "rb")
-    update = open(output, "wb")
-    length = os.path.getsize(fw)
+    with open(fw, "rb") as firmware:
+        update = open(output, "wb")
+        length = os.path.getsize(fw)
 
-    encode_file(firmware, update, length)
+        encode_file(firmware, update, length)
 
-    firmware.close()
     update.close()
 
     print("Encoding complete.")

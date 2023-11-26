@@ -55,7 +55,7 @@ class Heater:
         self.mcu_pwm.setup_cycle_time(pwm_cycle_time)
         self.mcu_pwm.setup_max_duration(MAX_HEAT_TIME)
         # Load additional modules
-        self.printer.load_object(config, "verify_heater %s" % (self.name,))
+        self.printer.load_object(config, f"verify_heater {self.name}")
         self.printer.load_object(config, "pid_calibrate")
         gcode = self.printer.lookup_object("gcode")
         gcode.register_mux_command("SET_HEATER_TEMPERATURE", "HEATER",
@@ -248,7 +248,7 @@ class PrinterHeaters:
     def setup_heater(self, config, gcode_id=None):
         heater_name = config.get_name().split()[-1]
         if heater_name in self.heaters:
-            raise config.error("Heater %s already registered" % (heater_name,))
+            raise config.error(f"Heater {heater_name} already registered")
         # Setup sensor
         sensor = self.setup_sensor(config)
         # Create heater
@@ -260,8 +260,7 @@ class PrinterHeaters:
         return self.available_heaters
     def lookup_heater(self, heater_name):
         if heater_name not in self.heaters:
-            raise self.printer.config_error(
-                "Unknown heater '%s'" % (heater_name,))
+            raise self.printer.config_error(f"Unknown heater '{heater_name}'")
         return self.heaters[heater_name]
     def setup_sensor(self, config):
         modules = ["thermistor", "adc_temperature", "spi_temperature",
@@ -272,18 +271,18 @@ class PrinterHeaters:
             self.printer.load_object(config, module_name)
         sensor_type = config.get('sensor_type')
         if sensor_type not in self.sensor_factories:
-            raise self.printer.config_error(
-                "Unknown temperature sensor '%s'" % (sensor_type,))
+            raise self.printer.config_error(f"Unknown temperature sensor '{sensor_type}'")
         return self.sensor_factories[sensor_type](config)
     def register_sensor(self, config, psensor, gcode_id=None):
         self.available_sensors.append(config.get_name())
         if gcode_id is None:
             gcode_id = config.get('gcode_id', None)
-            if gcode_id is None:
-                return
+        if gcode_id is None:
+            return
         if gcode_id in self.gcode_id_to_sensor:
             raise self.printer.config_error(
-                "G-Code sensor id %s already registered" % (gcode_id,))
+                f"G-Code sensor id {gcode_id} already registered"
+            )
         self.gcode_id_to_sensor[gcode_id] = psensor
     def get_status(self, eventtime):
         return {'available_heaters': self.available_heaters,
@@ -304,9 +303,7 @@ class PrinterHeaters:
             for gcode_id, sensor in sorted(self.gcode_id_to_sensor.items()):
                 cur, target = sensor.get_temp(eventtime)
                 out.append("%s:%.1f /%.1f" % (gcode_id, cur, target))
-        if not out:
-            return "T:0"
-        return " ".join(out)
+        return "T:0" if not out else " ".join(out)
     def cmd_M105(self, gcmd):
         # Get Extruder Temperature
         reactor = self.printer.get_reactor()
@@ -336,7 +333,7 @@ class PrinterHeaters:
     def cmd_TEMPERATURE_WAIT(self, gcmd):
         sensor_name = gcmd.get('SENSOR')
         if sensor_name not in self.available_sensors:
-            raise gcmd.error("Unknown sensor '%s'" % (sensor_name,))
+            raise gcmd.error(f"Unknown sensor '{sensor_name}'")
         min_temp = gcmd.get_float('MINIMUM', float('-inf'))
         max_temp = gcmd.get_float('MAXIMUM', float('inf'), above=min_temp)
         if min_temp == float('-inf') and max_temp == float('inf'):

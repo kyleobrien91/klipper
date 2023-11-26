@@ -30,7 +30,7 @@ class HandleStatusField:
         self.next_update_time = 0.
         self.result = None
     def get_label(self):
-        label = '%s field' % (self.field_name,)
+        label = f'{self.field_name} field'
         return {'label': label, 'units': 'Unknown'}
     def pull_data(self, req_time):
         if req_time < self.next_update_time:
@@ -60,32 +60,40 @@ class HandleTrapQ:
         self.cur_data = [(0., 0., 0., 0., (0., 0., 0.), (0., 0., 0.))]
         self.data_pos = 0
         tq, trapq_name, datasel = name_parts
-        ptypes = {}
-        ptypes['velocity'] = {
-            'label': '%s velocity' % (trapq_name,),
-            'units': 'Velocity\n(mm/s)', 'func': self._pull_velocity
-        }
-        ptypes['accel'] = {
-            'label': '%s acceleration' % (trapq_name,),
-            'units': 'Acceleration\n(mm/s^2)', 'func': self._pull_accel
+        ptypes = {
+            'velocity': {
+                'label': f'{trapq_name} velocity',
+                'units': 'Velocity\n(mm/s)',
+                'func': self._pull_velocity,
+            },
+            'accel': {
+                'label': f'{trapq_name} acceleration',
+                'units': 'Acceleration\n(mm/s^2)',
+                'func': self._pull_accel,
+            },
         }
         for axis, name in enumerate("xyz"):
-            ptypes['%s' % (name,)] = {
-                'label': '%s %s position' % (trapq_name, name), 'axis': axis,
-                'units': 'Position\n(mm)', 'func': self._pull_axis_position
+            ptypes[f'{name}'] = {
+                'label': f'{trapq_name} {name} position',
+                'axis': axis,
+                'units': 'Position\n(mm)',
+                'func': self._pull_axis_position,
             }
-            ptypes['%s_velocity' % (name,)] = {
-                'label': '%s %s velocity' % (trapq_name, name), 'axis': axis,
-                'units': 'Velocity\n(mm/s)', 'func': self._pull_axis_velocity
+            ptypes[f'{name}_velocity'] = {
+                'label': f'{trapq_name} {name} velocity',
+                'axis': axis,
+                'units': 'Velocity\n(mm/s)',
+                'func': self._pull_axis_velocity,
             }
-            ptypes['%s_accel' % (name,)] = {
-                'label': '%s %s acceleration' % (trapq_name, name),
-                'axis': axis, 'units': 'Acceleration\n(mm/s^2)',
-                'func': self._pull_axis_accel
+            ptypes[f'{name}_accel'] = {
+                'label': f'{trapq_name} {name} acceleration',
+                'axis': axis,
+                'units': 'Acceleration\n(mm/s^2)',
+                'func': self._pull_axis_accel,
             }
         pinfo = ptypes.get(datasel)
         if pinfo is None:
-            raise error("Unknown trapq data selection '%s'" % (datasel,))
+            raise error(f"Unknown trapq data selection '{datasel}'")
         self.label = {'label': pinfo['label'], 'units': pinfo['units']}
         self.axis = pinfo.get('axis')
         self.pull_data = pinfo['func']
@@ -159,9 +167,9 @@ class HandleStepQ:
             try:
                 self.smooth_time = float(name_parts[2])
             except ValueError:
-                raise error("Invalid stepq smooth time '%s'" % (name_parts[2],))
+                raise error(f"Invalid stepq smooth time '{name_parts[2]}'")
     def get_label(self):
-        label = '%s position' % (self.stepper_name,)
+        label = f'{self.stepper_name} position'
         return {'label': label, 'units': 'Position\n(mm)'}
     def pull_data(self, req_time):
         smooth_time = self.smooth_time
@@ -212,9 +220,7 @@ class HandleStepQ:
         step_clock = first_clock - jmsg['data'][0][0]
         cdiff = jmsg['last_clock'] - first_clock
         tdiff = last_time - first_time
-        inv_freq = 0.
-        if cdiff:
-            inv_freq = tdiff / cdiff
+        inv_freq = tdiff / cdiff if cdiff else 0.
         step_dist = jmsg['step_distance']
         step_pos = jmsg['start_position']
         for interval, raw_count, add in jmsg['data']:
@@ -223,7 +229,7 @@ class HandleStepQ:
             if count < 0:
                 qs_dist = -qs_dist
                 count = -count
-            for i in range(count):
+            for _ in range(count):
                 step_clock += interval
                 interval += add
                 step_time = first_time + (step_clock - first_clock) * inv_freq
@@ -248,10 +254,10 @@ class HandleADXL345:
         self.cur_data = []
         self.data_pos = 0
         if name_parts[2] not in 'xyz':
-            raise error("Unknown adxl345 data selection '%s'" % (name,))
+            raise error(f"Unknown adxl345 data selection '{name}'")
         self.axis = 'xyz'.index(name_parts[2])
     def get_label(self):
-        label = '%s %s acceleration' % (self.adxl_name, 'xyz'[self.axis])
+        label = f"{self.adxl_name} {'xyz'[self.axis]} acceleration"
         return {'label': label, 'units': 'Acceleration\n(mm/s^2)'}
     def pull_data(self, req_time):
         axis = self.axis
@@ -315,7 +321,7 @@ class JsonDispatcher:
         self.names = {}
         self.queues = {}
         self.last_read_time = 0.
-        self.log_reader = JsonLogReader(log_prefix + ".json.gz")
+        self.log_reader = JsonLogReader(f"{log_prefix}.json.gz")
         self.is_eof = False
     def check_end_of_data(self):
         return self.is_eof and not any(self.queues.values())
@@ -388,7 +394,7 @@ def param_split(line):
 # Split a dataset name (eg, "abc(def,ghi)") into parts
 def name_split(name):
     if '(' not in name or not name.endswith(')'):
-        raise error("Malformed dataset name '%s'" % (name,))
+        raise error(f"Malformed dataset name '{name}'")
     aname, aparams = name.split('(', 1)
     return [aname] + param_split(aparams[:-1])
 
@@ -403,7 +409,7 @@ def list_datasets():
 class LogManager:
     error = error
     def __init__(self, log_prefix):
-        self.index_reader = JsonLogReader(log_prefix + ".index.gz")
+        self.index_reader = JsonLogReader(f"{log_prefix}.index.gz")
         self.jdispatch = JsonDispatcher(log_prefix)
         self.initial_start_time = self.start_time = 0.
         self.datasets = {}
@@ -457,14 +463,14 @@ class LogManager:
         name_parts = name_split(name)
         cls = LogHandlers.get(name_parts[0])
         if cls is None:
-            raise error("Unknown dataset '%s'" % (name_parts[0],))
+            raise error(f"Unknown dataset '{name_parts[0]}'")
         len_pp = len(name_parts) - 1
         if len_pp < cls.ParametersMin or len_pp > cls.ParametersMax:
-            raise error("Invalid number of parameters for '%s'" % (name,))
+            raise error(f"Invalid number of parameters for '{name}'")
         if cls.SubscriptionIdParts:
             subscription_id = ":".join(name_parts[:cls.SubscriptionIdParts])
             if subscription_id not in self.log_subscriptions:
-                raise error("Dataset '%s' not in capture" % (subscription_id,))
+                raise error(f"Dataset '{subscription_id}' not in capture")
             self.jdispatch.add_handler(name, subscription_id)
         self.datasets[name] = hdl = cls(self, name, name_parts)
         return hdl

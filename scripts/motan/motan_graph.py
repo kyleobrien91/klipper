@@ -79,7 +79,7 @@ def parse_graph_description(desc):
     if '?' not in desc:
         return (desc, {})
     dataset, params = desc.split('?', 1)
-    params = {k: v for k, v in urlparse.parse_qsl(params)}
+    params = dict(urlparse.parse_qsl(params))
     for fkey in ['alpha']:
         if fkey in params:
             params[fkey] = float(params[fkey])
@@ -88,8 +88,7 @@ def parse_graph_description(desc):
 def list_datasets():
     datasets = readlog.list_datasets() + analyzers.list_datasets()
     out = ["\nAvailable datasets:\n"]
-    for dataset, desc in datasets:
-        out.append("%-24s: %s\n" % (dataset, desc))
+    out.extend("%-24s: %s\n" % (dataset, desc) for dataset, desc in datasets)
     out.append("\n")
     sys.stdout.write("".join(out))
     sys.exit(0)
