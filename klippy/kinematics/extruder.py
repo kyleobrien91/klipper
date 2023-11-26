@@ -136,8 +136,7 @@ class PrinterExtruder:
                 "See the 'max_extrude_cross_section' config option for details"
                 % (area, self.max_extrude_ratio * self.filament_area))
     def calc_junction(self, prev_move, move):
-        diff_r = move.axes_r[3] - prev_move.axes_r[3]
-        if diff_r:
+        if diff_r := move.axes_r[3] - prev_move.axes_r[3]:
             return (self.instant_corner_v / abs(diff_r))**2
         return move.max_cruise_v2
     def move(self, print_time, move):
@@ -162,9 +161,7 @@ class PrinterExtruder:
         temp = gcmd.get_float('S', 0.)
         index = gcmd.get_int('T', None, minval=0)
         if index is not None:
-            section = 'extruder'
-            if index:
-                section = 'extruder%d' % (index,)
+            section = 'extruder%d' % (index,) if index else 'extruder'
             extruder = self.printer.lookup_object(section, None)
             if extruder is None:
                 if temp <= 0.:
@@ -191,7 +188,7 @@ class PrinterExtruder:
         msg = ("pressure_advance: %.6f\n"
                "pressure_advance_smooth_time: %.6f"
                % (pressure_advance, smooth_time))
-        self.printer.set_rollover_info(self.name, "%s: %s" % (self.name, msg))
+        self.printer.set_rollover_info(self.name, f"{self.name}: {msg}")
         gcmd.respond_info(msg, log=False)
     cmd_SET_E_STEP_DISTANCE_help = "Set extruder step distance"
     def cmd_SET_E_STEP_DISTANCE(self, gcmd):
@@ -210,9 +207,9 @@ class PrinterExtruder:
     def cmd_ACTIVATE_EXTRUDER(self, gcmd):
         toolhead = self.printer.lookup_object('toolhead')
         if toolhead.get_extruder() is self:
-            gcmd.respond_info("Extruder %s already active" % (self.name,))
+            gcmd.respond_info(f"Extruder {self.name} already active")
             return
-        gcmd.respond_info("Activating extruder %s" % (self.name,))
+        gcmd.respond_info(f"Activating extruder {self.name}")
         toolhead.flush_step_generation()
         toolhead.set_extruder(self, self.stepper.get_commanded_position())
         self.printer.send_event("extruder:activate_extruder")

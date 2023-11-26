@@ -20,7 +20,7 @@ class ScrewsTiltAdjust:
                 break
             screw_coord = config.getfloatlist(prefix, count=2)
             screw_name = "screw at %.3f,%.3f" % screw_coord
-            screw_name = config.get(prefix + "_name", screw_name)
+            screw_name = config.get(f"{prefix}_name", screw_name)
             self.screws.append((screw_coord, screw_name))
         if len(self.screws) < 3:
             raise config.error("screws_tilt_adjust: Must have "
@@ -52,8 +52,8 @@ class ScrewsTiltAdjust:
             direction = direction.upper()
             if direction not in ('CW', 'CCW'):
                 raise gcmd.error(
-                    "Error on '%s': DIRECTION must be either CW or CCW" % (
-                        gcmd.get_commandline(),))
+                    f"Error on '{gcmd.get_commandline()}': DIRECTION must be either CW or CCW"
+                )
         self.direction = direction
         self.probe_helper.start_probe(gcmd)
 

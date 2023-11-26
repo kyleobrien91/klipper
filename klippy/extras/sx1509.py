@@ -27,7 +27,7 @@ class SX1509(object):
         self._name = config.get_name().split()[1]
         self._i2c = bus.MCU_I2C_from_config(config, default_speed=400000)
         self._ppins = self._printer.lookup_object("pins")
-        self._ppins.register_chip("sx1509_" + self._name, self)
+        self._ppins.register_chip(f"sx1509_{self._name}", self)
         self._mcu = self._i2c.get_mcu()
         self._mcu.register_config_callback(self._build_config)
         self._oid = self._i2c.get_oid()
@@ -56,12 +56,13 @@ class SX1509(object):
             self._mcu.add_config_cmd("i2c_write oid=%d data=%02x%04x" % (
                 self._oid, _reg, _data), is_init=True)
     def setup_pin(self, pin_type, pin_params):
-        if pin_type == 'digital_out' and pin_params['pin'][0:4] == "PIN_":
+        if pin_type == 'digital_out' and pin_params['pin'][:4] == "PIN_":
             return SX1509_digital_out(self, pin_params)
-        elif pin_type == 'pwm' and pin_params['pin'][0:4] == "PIN_":
+        elif pin_type == 'pwm' and pin_params['pin'][:4] == "PIN_":
             return SX1509_pwm(self, pin_params)
-        raise pins.error("Wrong pin or incompatible type: %s with type %s! " % (
-            pin_params['pin'][0:4], pin_type))
+        raise pins.error(
+            f"Wrong pin or incompatible type: {pin_params['pin'][:4]} with type {pin_type}! "
+        )
     def get_mcu(self):
         return self._mcu
     def get_oid(self):

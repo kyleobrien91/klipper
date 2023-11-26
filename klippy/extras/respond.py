@@ -29,11 +29,8 @@ class HostResponder:
             start = umsg.find('M118')
             end = msg.rfind('*')
             msg = msg[start:end]
-        if len(msg) > 5:
-            msg = msg[5:]
-        else:
-            msg = ''
-        gcmd.respond_raw("%s %s" % (self.default_prefix, msg))
+        msg = msg[5:] if len(msg) > 5 else ''
+        gcmd.respond_raw(f"{self.default_prefix} {msg}")
     cmd_RESPOND_help = ("Echo the message prepended with a prefix")
     def cmd_RESPOND(self, gcmd):
         respond_type = gcmd.get('TYPE', None)
@@ -48,7 +45,7 @@ class HostResponder:
                     " of 'echo', 'command', or 'error'" % (respond_type,))
         prefix = gcmd.get('PREFIX', prefix)
         msg = gcmd.get('MSG', '')
-        gcmd.respond_raw("%s %s" % (prefix, msg))
+        gcmd.respond_raw(f"{prefix} {msg}")
 
 def load_config(config):
     return HostResponder(config)

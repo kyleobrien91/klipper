@@ -39,8 +39,7 @@ class function:
         self.subfuncs = {}
     # Update function info with a found "yield" point.
     def noteYield(self, stackusage):
-        if self.yield_usage < stackusage:
-            self.yield_usage = stackusage
+        self.yield_usage = max(self.yield_usage, stackusage)
     # Update function info with a found "call" point.
     def noteCall(self, insnaddr, calladdr, stackusage):
         if (calladdr, stackusage) in self.subfuncs:
@@ -104,12 +103,22 @@ def orderfuncs(funcaddrs, availfuncs):
     return out
 
 hex_s = r'[0-9a-f]+'
-re_func = re.compile(r'^(?P<funcaddr>' + hex_s + r') <(?P<func>.*)>:$')
+re_func = re.compile(f'^(?P<funcaddr>{hex_s}) <(?P<func>.*)>:$')
 re_asm = re.compile(
-    r'^[ ]*(?P<insnaddr>' + hex_s
-    + r'):\t[^\t]*\t(?P<insn>[^\t]+?)(?P<params>\t[^;]*)?'
-    + r'[ ]*(; (?P<calladdr>0x' + hex_s
-    + r') <(?P<ref>.*)>)?$')
+    (
+        (
+            (
+                (
+                    f'^[ ]*(?P<insnaddr>{hex_s}'
+                    + r'):\t[^\t]*\t(?P<insn>[^\t]+?)(?P<params>\t[^;]*)?'
+                )
+                + r'[ ]*(; (?P<calladdr>0x'
+            )
+            + hex_s
+        )
+        + r') <(?P<ref>.*)>)?$'
+    )
+)
 
 def main():
     unknownfunc = function(None, "<unknown>")
